@@ -1,14 +1,25 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 
 class AnsiTextController extends ChangeNotifier {
-  AnsiTextController({String? text}) : _textLines = text == null ? [] : [text];
+  AnsiTextController({String? text, this.lineLimit = -1})
+      : _textLines = text == null ? ListQueue() : ListQueue.from([text]);
 
-  final List<String> _textLines;
+  AnsiTextController.from(Iterable<String> lines, {this.lineLimit = -1})
+      : _textLines = ListQueue.from(lines);
+
+  final ListQueue<String> _textLines;
+  int lineLimit;
 
   List<String> get lines => [..._textLines];
 
-  void writeLn(String line) {
-    _textLines.add(line);
+  /// Add a line
+  void writeLn(String line) => writeAll([line]);
+
+  void writeAll(Iterable<String> lines) {
+    _textLines.addAll(lines);
+    _trimLinesTo(lines: lineLimit);
     notifyListeners();
   }
 
@@ -17,17 +28,48 @@ class AnsiTextController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void removeLastLine() {
-    _textLines.removeLast();
+  /// Removes most recent line
+  String removeLastLine() {
+    if (_textLines.isEmpty) return '';
+    final last = _textLines.removeLast();
+    notifyListeners();
+    return last;
+  }
+
+  /// Removes an old line
+  String removeLine() {
+    if (_textLines.isEmpty) return '';
+    final first = _textLines.removeFirst();
+    notifyListeners();
+    return first;
+  }
+
+  /// Removes old lines
+  List<String> removeLines(int count) {
+    final lines = <String>[];
+    for (int i = 0; i < count; i++) {
+      if (_textLines.isEmpty) break;
+      lines.add(_textLines.removeFirst());
+    }
+    notifyListeners();
+    return lines;
+  }
+
+  /// Update the line limit to [limit]
+  /// -1 means no limit.
+  /// Automatically trims if [limit] is lower than the current length
+  void limitLinesTo(int limit) {
+    lineLimit = limit;
+    _trimLinesTo(lines: limit);
     notifyListeners();
   }
 
-  void removeLine() => removeLines(1);
-
-  void removeLines(int count) {
-    for (int i = count; i > 0; i--) {
-      _textLines.removeAt(0);
-    }
-    notifyListeners();
+  /// Remove old lines until we have exactly this many
+  /// -1 early-returns
+  void _trimLinesTo({required int lines}) {
+    if (lines < 0) return;
+    final overflow = _textLines.length - lines;
+    if (overflow <= 0) return;
+    removeLines(overflow);
   }
 }
