@@ -22,51 +22,56 @@ abstract class AnsiEscapeCodes {
   static const String boldStartCode = '$escape[1m';
 
   /// Ending ANSI code for bold style.
-  static const String boldEndCode = '$escape[22m';
+  static const String boldClearCode = '$escape[22m';
 
   /// Starting ANSI code for dim style.
   static const String dimStartCode = '$escape[2m';
 
   /// Ending ANSI code for dim style.
-  static const String dimEndCode = '$escape[22m';
+  static const String dimClearCode = '$escape[22m';
 
   /// Starting ANSI code for italic style.
   static const String italicStartCode = '$escape[3m';
 
   /// Ending ANSI code for italic style.
-  static const String italicEndCode = '$escape[23m';
+  static const String italicClearCode = '$escape[23m';
 
   /// Starting ANSI code for underline style.
   static const String underlineStartCode = '$escape[4m';
 
   /// Ending ANSI code for underline style.
-  static const String underlineEndCode = '$escape[24m';
+  static const String underlineClearCode = '$escape[24m';
 
   /// Starting ANSI code for bold-underline style.
   static const String boldUnderlineStartCode = '$escape[21m';
 
   /// Ending ANSI code for bold-underline style.
-  static const String boldUnderlineEndCode = '$escape[24m';
+  static const String boldUnderlineClearCode = '$escape[24m';
 
   /// Starting ANSI code for inverse style.
   static const String inverseStartCode = '$escape[7m';
 
   /// Ending ANSI code for inverse style.
-  static const String inverseEndCode = '$escape[27m';
+  static const String inverseClearCode = '$escape[27m';
 
   /// Starting ANSI code for strikethrough style.
   static const String strikethroughStartCode = '$escape[9m';
 
   /// Ending ANSI code for strikethrough style.
-  static const String strikethroughEndCode = '$escape[29m';
+  static const String strikethroughClearCode = '$escape[29m';
 
   /// ANSI escape sequence used to apply 8-bit (256-color) ANSI foreground colors in a terminal.
   /// The "38" part of the sequence refers to the foreground color, and the "5" indicates that we're using 8-bit colors.
   static const String foregroundColorStartCode = '$escape[38;5;';
+  static String foregroundColorCode(int color) =>
+      foregroundColorStartCode + color.toString() + colorCodeTail;
 
   /// ANSI escape sequence used to apply 8-bit (256-color) ANSI foreground colors in a terminal.
   /// The "48" part of the sequence refers to the background color, and the "5" indicates that we're using 8-bit colors.
   static const String backgroundColorStartCode = '$escape[48;5;';
+
+  static String backgroundColorCode(int color) =>
+      backgroundColorStartCode + color.toString() + colorCodeTail;
 
   /// ANSI escape sequence used to specify a 24-bit RGB color value in decimal notation.
   /// The first number after the escape sequence represents the red value, the second number represents the green value,
@@ -74,14 +79,19 @@ abstract class AnsiEscapeCodes {
   /// The "38" part of the sequence refers to the foreground color, and the "2" indicates that we're using 24-bit colors.
   static const String foregroundRgbColorStartCode = '$escape[38;2;';
 
+  static String foregroundRgbColorCode(int r, int b, int g) =>
+      '$backgroundColorStartCode$r;$g;$b;$colorCodeTail';
+
   /// ANSI escape sequence used to specify a 24-bit RGB color value in decimal notation.
   /// The first number after the escape sequence represents the red value, the second number represents the green value,
   /// and the third number represents the blue value, all in the range of 0 to 255.
   /// The "48" part of the sequence refers to the background color, and the "2" indicates that we're using 24-bit colors.
   static const String backgroundRgbColorStartCode = '$escape[48;2;';
+  static String backgroundRbgColorCode(int r, int b, int g) =>
+      '$backgroundColorStartCode$r;$g;$b;$colorCodeTail';
 
-  /// Ending ANSI code for colors.
-  static const String colorEndCode = 'm';
+  /// Ending ANSI character for colors.
+  static const String colorCodeTail = 'm';
 
   /// Moves the cursor left (but may "backwards wrap" if cursor is at start of line).
   static const String backspace = '\b$cleanFromCursorToEnd';
