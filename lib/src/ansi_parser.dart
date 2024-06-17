@@ -6,6 +6,12 @@ class AnsiParser {
   const AnsiParser({required this.style});
   final AnsiTheme style;
 
+  // Matches ansi codes
+  static final RegExp ansiCodeRegex = RegExp(r'\x1B\[((?:\d|;)+)m([^\x1B]*)');
+
+  // TODO: does this need access to the last state?
+
+  /// Only parses out color/formatting codes
   List<(String, AnsiState)> parse(String input) {
     input = input.replaceAll('\n\r', '\n');
     final List<(String, AnsiState)> result = [];
@@ -16,8 +22,7 @@ class AnsiParser {
       defaultBackgroundColor: style.backgroundColor,
     );
 
-    final RegExp regex = RegExp(r'\x1B\[((?:\d|;)+)m([^\x1B]*)');
-    final Iterable<Match> matches = regex.allMatches(input);
+    final Iterable<Match> matches = ansiCodeRegex.allMatches(input);
 
     // ensure anything before a code is shown
     if (matches.isNotEmpty && matches.first.start != 0) {
