@@ -1,8 +1,7 @@
-import 'dart:ui' as ui;
-
 import 'package:ansi_text/src/ansi_parser.dart';
 import 'package:ansi_text/src/ansi_theme.dart';
 import 'package:ansi_text/src/controller.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 class AnsiWidget extends StatefulWidget {
@@ -10,11 +9,13 @@ class AnsiWidget extends StatefulWidget {
     super.key,
     required this.controller,
     this.selectable = false,
+    this.softWrap,
     TextStyle? style,
   }) : _style = style;
 
   final AnsiTextController controller;
   final bool selectable;
+  final bool? softWrap;
   final TextStyle? _style;
   static final RegExp stripAnsiRegex = RegExp(
       '[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))');
@@ -51,53 +52,61 @@ class _AnsiWidgetState extends State<AnsiWidget> {
         backgroundColor: colorScheme.background,
       ),
     );
+
+    final parsedLines = lines.map(ansiParser.parse).flattened;
+
+    if (widget.selectable) {
+      final backTextSpan = TextSpan(
+        style: style,
+        children: [
+          for (final (text, state) in parsedLines)
+            TextSpan(
+              text: text.replaceAll(AnsiWidget.stripAnsiRegex, ''),
+              style: state
+                  .toTextStyle(style: style)
+                  .copyWith(color: Colors.transparent),
+            )
+        ],
+      );
+      final frontTextSpan = TextSpan(
+        style: style,
+        children: [
+          for (final (text, state) in parsedLines)
+            TextSpan(
+              text: text.replaceAll(AnsiWidget.stripAnsiRegex, ''),
+              style: state
+                  .toTextStyle(style: style)
+                  .copyWith(backgroundColor: Colors.transparent),
+            )
+        ],
+      );
+      return Container(
+        color: ansiParser.style.backgroundColor,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: SelectionArea(
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              Text.rich(
+                backTextSpan,
+                softWrap: widget.softWrap,
+              ),
+              Text.rich(
+                frontTextSpan,
+                softWrap: widget.softWrap,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final textSpan = TextSpan(
       style: style,
       children: [
-        for (final line in lines)
+        for (final (text, state) in parsedLines)
           TextSpan(
-            children: [
-              for (final (text, state) in ansiParser.parse(line))
-                TextSpan(
-                  text: text.replaceAll(AnsiWidget.stripAnsiRegex, ''),
-                  style: state.toTextStyle(style: style),
-                )
-            ],
-          ),
-      ],
-    );
-
-    final backTextSpan = TextSpan(
-      style: style,
-      children: [
-        for (final line in lines)
-          TextSpan(
-            children: [
-              for (final (text, state) in ansiParser.parse(line))
-                TextSpan(
-                  text: text.replaceAll(AnsiWidget.stripAnsiRegex, ''),
-                  style: state.toTextStyle(style: style).copyWith(
-                        color: Colors.transparent,
-                      ),
-                )
-            ],
-          ),
-      ],
-    );
-    final frontTextSpan = TextSpan(
-      style: style,
-      children: [
-        for (final line in lines)
-          TextSpan(
-            children: [
-              for (final (text, state) in ansiParser.parse(line))
-                TextSpan(
-                  text: text.replaceAll(AnsiWidget.stripAnsiRegex, ''),
-                  style: state.toTextStyle(style: style).copyWith(
-                        backgroundColor: Colors.transparent,
-                      ),
-                )
-            ],
+            text: text.replaceAll(AnsiWidget.stripAnsiRegex, ''),
+            style: state.toTextStyle(style: style),
           ),
       ],
     );
@@ -107,18 +116,10 @@ class _AnsiWidgetState extends State<AnsiWidget> {
     return Container(
       color: ansiParser.style.backgroundColor,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: widget.selectable
-          ? Stack(
-              fit: StackFit.passthrough,
-              children: [
-                RichText(text: backTextSpan),
-                SelectableText.rich(
-                  frontTextSpan,
-                  selectionHeightStyle: ui.BoxHeightStyle.includeLineSpacingTop,
-                ),
-              ],
-            )
-          : RichText(text: textSpan),
+      child: Text.rich(
+        textSpan,
+        softWrap: widget.softWrap,
+      ),
     );
   }
 }
