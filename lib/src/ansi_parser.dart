@@ -10,6 +10,7 @@ class AnsiParser {
   static final RegExp ansiCodeRegex = RegExp(r'\x1B\[((?:\d|;)+)m([^\x1B]*)');
 
   // TODO: does this need access to the last state?
+  // TODO: Linkify support in https://pub.dev/packages/linkify
 
   /// Only parses out color/formatting codes
   List<(String, AnsiState)> parse(String input) {
